@@ -82,7 +82,7 @@ map{
     handleinputs$_;
     #render objects on top of map
     renderdynent $ship, $map_maxl/2, $ship_x;
-    usleep(30000);
+    usleep(60000);
     $lbase+=$ship_speed;
     $lbase > $map_maxl && ($lbase=0);
 }0..10000;
