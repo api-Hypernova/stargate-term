@@ -7,33 +7,6 @@ p`tput civis`; #hide cursor
 p`stty -echo`; #don't show input on screen
 
 $ents=undef;
-#$ents->{map}->{file}="stargate.map";
-#$mapfile="stargate.map";
-#$ents->{ship}->{file}="ship.tex";
-#$shipfile="ship.tex";
-#$ents->{map}->{sprite}="";
-#$map="";
-#$ents->{map}->{maxl}=0;
-#$map_maxl=0;
-#$ents->{ship}->{sprite}="";
-#$ship="";
-#$ship_maxl=0;
-#$ents->{ship}->{maxl}=0;
-#$ship_speed=1;
-
-#load map
-#open(r,"<:utf8",$mapfile)||die"Could not open $mapfile";
-#map{
-#    $map.=$_;
-  #  length$_ > $map_maxl && ($map_maxl=length$_);
-#}<r>;
-
-#load ship
-#open(r,"<:utf8",$shipfile)||die"Could not open $shipfile";
-#map{
-#    $ship.=$_;
-  #  length$_ > $ship_maxl && ($ship_maxl=length$_);
-#}<r>;
 
 sub loadent {
     $name=@_[0];
