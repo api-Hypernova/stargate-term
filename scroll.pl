@@ -6,29 +6,52 @@ $t=Term::Cap->Tgetent;
 p`tput civis`; #hide cursor
 p`stty -echo`; #don't show input on screen
 
-$mapfile="stargate.map";
-$shipfile="ship.tex";
-$map="";
-$map_maxl=0;
-$ship="";
-$ship_maxl=0;
-$ship_speed=1;
-$ship_x=20;
-$ship_lastaccel=0;
+$ents=undef;
+#$ents->{map}->{file}="stargate.map";
+#$mapfile="stargate.map";
+#$ents->{ship}->{file}="ship.tex";
+#$shipfile="ship.tex";
+#$ents->{map}->{sprite}="";
+#$map="";
+#$ents->{map}->{maxl}=0;
+#$map_maxl=0;
+#$ents->{ship}->{sprite}="";
+#$ship="";
+#$ship_maxl=0;
+#$ents->{ship}->{maxl}=0;
+#$ship_speed=1;
 
 #load map
-open(r,"<:utf8",$mapfile)||die"Could not open $mapfile";
-map{
-    $map.=$_;
-    length$_ > $map_maxl && ($map_maxl=length$_);
-}<r>;
+#open(r,"<:utf8",$mapfile)||die"Could not open $mapfile";
+#map{
+#    $map.=$_;
+  #  length$_ > $map_maxl && ($map_maxl=length$_);
+#}<r>;
 
 #load ship
-open(r,"<:utf8",$shipfile)||die"Could not open $shipfile";
-map{
-    $ship.=$_;
-    length$_ > $ship_maxl && ($ship_maxl=length$_);
-}<r>;
+#open(r,"<:utf8",$shipfile)||die"Could not open $shipfile";
+#map{
+#    $ship.=$_;
+  #  length$_ > $ship_maxl && ($ship_maxl=length$_);
+#}<r>;
+
+sub loadent {
+    $name=@_[0];
+    open(r,"<:utf8","$name.tex")||die"Could not open sprite file $name.tex";
+    $ents->{$name}->{sprite}="";
+    $ents->{$name}->{xbb}=0;
+    $ents->{$name}->{ybb}=0;
+    $ents->{$name}->{xvel}=0;
+    $ents->{$name}->{yvel}=0;
+    $ents->{$name}->{xpos}=0;
+    $ents->{$name}->{ypos}=0;
+    $ents->{$name}->{dir}=0;
+    map{
+        $ents->{$name}->{sprite}.=$_;
+        $ents->{$name}->{ybb}++;
+        length$_ > $ents->{$name}->{xbb} && ($ents->{$name}->{xbb}=length$_);
+    }<r>;
+}
 
 
 sub rendermap {
@@ -36,11 +59,11 @@ sub rendermap {
     #$frame="";
     map{
         print substr $_,  $ix;
-        print " " x ($map_maxl - length$_);
+        print " " x ($ents->{map}->{xbb} - length$_);
         p substr $_, 0, $ix;
         #$frame.="\n";
         #$x=<>;
-    }split/\n/,$map;
+    }split/\n/,$ents->{map}->{sprite};
     #p $frame;
     p"";
 }
@@ -49,7 +72,7 @@ sub renderdynent {
     $tex=@_[0];
     $x=@_[1];
     $y=@_[2];
-    p"SHIP POS: $x,$y";
+    p"ENT POS: $x,$y";
     $c=0;
     map{
         print $t->Tgoto("cm",$x,$y+$c);
@@ -64,11 +87,18 @@ sub handleinputs {
     $rstr = ReadKey .000001;
     ReadMode 'normal';
    # p"Got key: $k";
-    $rstr=~/w/ && ($ship_x-=2);
-    $rstr=~/s/ && ($ship_x+=2);
-    $rstr=~/\[/ && $ship_speed < 10 && ($ship_lastaccel=$tick) && ($ship_speed++);
-    $rstr!~/\[/ && $tick - $ship_lastaccel > 5 && ($ship_lastaccel=$tick) && $ship_speed > 0 && ($ship_speed--);
+    $rstr=~/w/ && ($ents->{ship}->{ypos}-=2);
+    $rstr=~/s/ && ($ents->{ship}->{ypos}+=2);
+    $rstr=~/\[/ && $ents->{ship}->{xvel} < 10 && ($ship_lastaccel=$tick) && ($ents->{ship}->{xvel}++);
+    $rstr!~/\[/ && $tick - $ship_lastaccel > 5 && ($ship_lastaccel=$tick) && $ents->{ship}->{xvel} > 0 && ($ents->{ship}->{xvel}--);
 }
+
+#load main entities
+loadent("map");
+loadent("ship");
+$ents->{ship}->{ypos}=20;
+$ship_lastaccel=0;
+
 
 #main render loop
 
@@ -81,10 +111,10 @@ map{
     #handle user inputs
     handleinputs$_;
     #render objects on top of map
-    renderdynent $ship, $map_maxl/2, $ship_x;
+    renderdynent $ents->{ship}->{sprite}, $ents->{map}->{xbb}/2, $ents->{ship}->{ypos};
     usleep(60000);
-    $lbase+=$ship_speed;
-    $lbase > $map_maxl && ($lbase=0);
+    $lbase+=$ents->{ship}->{xvel};
+    $lbase > $ents->{map}->{xbb} && ($lbase=0); # once we reach the end of the map, wrap back to the start
 }0..10000;
 
 #TODO BUG
