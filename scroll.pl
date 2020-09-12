@@ -26,7 +26,6 @@ sub loadent {
     }<r>;
 }
 
-
 sub rendermap {
     $ix=@_[0];
     #$frame="";
@@ -54,6 +53,18 @@ sub renderdynent {
     }split/\n/,$tex;
 }
 
+sub spawnwave {
+    print
+}
+
+sub updatedynents {
+    print
+}
+
+sub spawnlaser {
+    createent 
+}
+
 sub handleinputs {
     $tick=@_[0];
     ReadMode 'cbreak';
@@ -69,6 +80,7 @@ sub handleinputs {
 #load main entities
 loadent("map");
 loadent("ship");
+loadent("laser");
 $ents->{ship}->{ypos}=20;
 $ship_lastaccel=0;
 
@@ -88,7 +100,7 @@ map{
     usleep(60000);
     $lbase+=$ents->{ship}->{xvel};
     $lbase > $ents->{map}->{xbb} && ($lbase=0); # once we reach the end of the map, wrap back to the start
-}0..10000;
+}0..5000;
 
 #TODO BUG
 # Some tearing happens when (it SEEMS) we reach the end one complete cycle of going over the map (i.e. when we reach $map_maxl
