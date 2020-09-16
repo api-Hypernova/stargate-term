@@ -59,15 +59,22 @@ sub updatedynents {
     print
 }
 
+sub firelaser {
+    print
+}
+
 sub newdynent {
-    $ops="@_";
-    %ops=split/ /,$ops;
+    %ops=split/ /,"@_";
     map{
         $dynents->{$ops{ent}}->{$_}=$ops{$_};
-        p"Key: $_";
-        p"Value: $ops{$_}";
     }keys%ops;
     #properties: name, sprite, xvel, yvel, xpos, ypos, dir
+}
+
+sub renderdynents {
+    #map{
+      #  renderdynent $ents->{ship}->{sprite}, $dynents->{ship}->{xpos}, $dynents->{ship}->{ypos};
+    #};
 }
 
 sub handleinputs {
@@ -92,26 +99,28 @@ newdynent(ent=>"ship",
     yvel=>0,
     dir=>1
     );
-
-p"xpos";
-p$dynents->{ship}->{xpos};
-p"ypos";
-p$dynents->{ship}->{ypos};
-p"xvel";
-p$dynents->{ship}->{xvel};
-p"yvel";
-p$dynents->{ship}->{yvel};
-p"dir";
-p$dynents->{ship}->{dir};
+newdynent(ent=>"laser",
+    xpos=>int($dynents->{ship}->{xpos}+($ents->{ship}->{xbb}/2)),
+    ypos=>int($dynents->{ship}->{ypos}+($ents->{ship}->{ybb}/2)),
+    xvel=>2,
+    yvel=>0,
+    dir=>1
+    );
 
 say Dumper $dynents;
+
+p"list of dynents";
+map{
+    say;
+}keys%{$dynents};
+
 $ship_lastaccel=0;
 
 #main render loop
 
 $lbase=0;
 
-#exit 0;
+exit 0;
 
 map{
     print`clear`;
@@ -120,7 +129,6 @@ map{
     #handle user inputs
     handleinputs$_;
     #render objects on top of map
-    renderdynent $ents->{ship}->{sprite}, $dynents->{ship}->{xpos}, $dynents->{ship}->{ypos};
     usleep(60000);
     $lbase+=$dynents->{ship}->{xvel};
     $lbase > $ents->{map}->{xbb} && ($lbase=0); # once we reach the end of the map, wrap back to the start
