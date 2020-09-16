@@ -1,5 +1,6 @@
 use 5.18.0;no strict;use Term::Cap; use Term::ReadKey; sub p{say"@_"}
 use Time::HiRes qw(usleep);
+use Data::Dumper;
 binmode STDOUT, ":encoding(UTF-8)";
 $| = 1;
 $t=Term::Cap->Tgetent;
@@ -7,6 +8,7 @@ p`tput civis`; #hide cursor
 p`stty -echo`; #don't show input on screen
 
 $ents=undef;
+$dynents=undef;
 
 sub loadent {
     $name=@_[0];
@@ -14,11 +16,11 @@ sub loadent {
     $ents->{$name}->{sprite}="";
     $ents->{$name}->{xbb}=0;
     $ents->{$name}->{ybb}=0;
-    $ents->{$name}->{xvel}=0;
-    $ents->{$name}->{yvel}=0;
-    $ents->{$name}->{xpos}=0;
-    $ents->{$name}->{ypos}=0;
-    $ents->{$name}->{dir}=0;
+    #$ents->{$name}->{xvel}=0; #REPLACE
+    #$ents->{$name}->{yvel}=0; #REPLACE
+    #$ents->{$name}->{xpos}=0; #REPLACE
+    #$ents->{$name}->{ypos}=0; #REPLACE
+    #$ents->{$name}->{dir}=0; #REPLACE
     map{
         $ents->{$name}->{sprite}.=$_;
         $ents->{$name}->{ybb}++;
@@ -28,15 +30,11 @@ sub loadent {
 
 sub rendermap {
     $ix=@_[0];
-    #$frame="";
     map{
         print substr $_,  $ix;
         print " " x ($ents->{map}->{xbb} - length$_);
         p substr $_, 0, $ix;
-        #$frame.="\n";
-        #$x=<>;
     }split/\n/,$ents->{map}->{sprite};
-    #p $frame;
     p"";
 }
 
@@ -61,8 +59,15 @@ sub updatedynents {
     print
 }
 
-sub spawnlaser {
-    createent 
+sub newdynent {
+    $ops="@_";
+    %ops=split/ /,$ops;
+    map{
+        $dynents->{$ops{ent}}->{$_}=$ops{$_};
+        p"Key: $_";
+        p"Value: $ops{$_}";
+    }keys%ops;
+    #properties: name, sprite, xvel, yvel, xpos, ypos, dir
 }
 
 sub handleinputs {
@@ -70,24 +75,43 @@ sub handleinputs {
     ReadMode 'cbreak';
     $rstr = ReadKey .000001;
     ReadMode 'normal';
-   # p"Got key: $k";
-    $rstr=~/w/ && ($ents->{ship}->{ypos}-=2);
-    $rstr=~/s/ && ($ents->{ship}->{ypos}+=2);
-    $rstr=~/\[/ && $ents->{ship}->{xvel} < 10 && ($ship_lastaccel=$tick) && ($ents->{ship}->{xvel}++);
-    $rstr!~/\[/ && $tick - $ship_lastaccel > 5 && ($ship_lastaccel=$tick) && $ents->{ship}->{xvel} > 0 && ($ents->{ship}->{xvel}--);
+    $rstr=~/w/ && ($dynents->{ship}->{ypos}-=2);
+    $rstr=~/s/ && ($dynents->{ship}->{ypos}+=2);
+    $rstr=~/\[/ && $dynents->{ship}->{xvel} < 10 && ($ship_lastaccel=$tick) && ($dynents->{ship}->{xvel}++);
+    $rstr!~/\[/ && $tick - $ship_lastaccel > 5 && ($ship_lastaccel=$tick) && $dynents->{ship}->{xvel} > 0 && ($dynents->{ship}->{xvel}--);
 }
 
 #load main entities
 loadent("map");
 loadent("ship");
 loadent("laser");
-$ents->{ship}->{ypos}=20;
-$ship_lastaccel=0;
+newdynent(ent=>"ship",
+    xpos=>$ents->{map}->{xbb}/2,
+    ypos=>20,
+    xvel=>0,
+    yvel=>0,
+    dir=>1
+    );
 
+p"xpos";
+p$dynents->{ship}->{xpos};
+p"ypos";
+p$dynents->{ship}->{ypos};
+p"xvel";
+p$dynents->{ship}->{xvel};
+p"yvel";
+p$dynents->{ship}->{yvel};
+p"dir";
+p$dynents->{ship}->{dir};
+
+say Dumper $dynents;
+$ship_lastaccel=0;
 
 #main render loop
 
 $lbase=0;
+
+#exit 0;
 
 map{
     print`clear`;
@@ -96,9 +120,9 @@ map{
     #handle user inputs
     handleinputs$_;
     #render objects on top of map
-    renderdynent $ents->{ship}->{sprite}, $ents->{map}->{xbb}/2, $ents->{ship}->{ypos};
+    renderdynent $ents->{ship}->{sprite}, $dynents->{ship}->{xpos}, $dynents->{ship}->{ypos};
     usleep(60000);
-    $lbase+=$ents->{ship}->{xvel};
+    $lbase+=$dynents->{ship}->{xvel};
     $lbase > $ents->{map}->{xbb} && ($lbase=0); # once we reach the end of the map, wrap back to the start
 }0..5000;
 
