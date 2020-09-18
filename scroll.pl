@@ -47,28 +47,70 @@ sub renderdynent {
 }
 
 sub spawnwave {
-    print
+    map{
+        newdynent(id=>"lander$_",
+            ent=>"lander",
+            xpos=>$ents->{map}->{xbb}/3+int(rand($ents->{map}->{xbb}/3))+1,
+            ypos=>int(rand($ents->{map}->{ybb}/2)),
+            xvel=>int(rand(3))+3,
+            yvel=>0,
+            dir=>1);
+    }1..5;
+}
+
+sub checkdynentcollision {
+    map{
+            $e=$_;
+            $dynents->{$e}->{ent} eq "lander"  && p "LANDER" && goto e;
+            map{
+                    $dynents->{$e}->{ent} eq "laser" && $dynents->{$_}->{ent} eq "laser" && goto e; #lasers don't collide with each other
+                    $dynents->{$e}->{xpos} + $ents->{$dynents->{$e}}->{xbb} >= $dynents->{$_}->{xpos} &&
+                    #$dynents->{$e}->{xpos} <= $dynents->{$e}->{xpos} + $ents->{$dynents->{$e}}->{xbb} &&
+                    #$dynents->{$e}->{ypos} + $ents->{$dynents->{$e}}->{ybb} >= $dynents->{$_}->{ypos} &&
+                    #$dynents->{$e}->{ypos} <= $dynents->{$e}->{ypos} + $ents->{$dynents->{$e}}->{ybb} &&
+                    #p "COLLISION";
+                    delete $dynents->{$e} &&
+                    delete $dynents->{$_};
+            }keys%$dynents;
+            e:
+    }keys%$dynents;
 }
 
 sub updatedynents {
-    print
+    map{
+        $_ eq"ship"&&goto e;
+        $dynents->{$_}->{xpos}+=$dynents->{$_}->{xvel}-$dynents->{ship}->{xvel};
+        $dynents->{$_}->{ypos}+=$dynents->{$_}->{yvel};
+        e:
+    }keys%$dynents;
 }
 
 sub firelaser {
-    print
+    $tick=@_[0];
+    newdynent(id=>"laser$tick",
+        ent=>"laser",
+        xpos=>int($dynents->{ship}->{xpos}+$ents->{ship}->{xbb}),
+        ypos=>int($dynents->{ship}->{ypos}+($ents->{ship}->{ybb}/2)),
+        xvel=>10,
+        yvel=>0,
+        deloffscreen=>1,
+        dir=>1);
 }
 
 sub newdynent {
     %ops=split/ /,"@_";
     map{
-        $dynents->{$ops{ent}}->{$_}=$ops{$_};
+        $dynents->{$ops{id}}->{$_}=$ops{$_};
     }keys%ops;
-    #properties: name, sprite, xvel, yvel, xpos, ypos, dir
 }
 
 sub renderdynents {
     map{
-        renderdynent $ents->{$_}->{sprite}, $dynents->{$_}->{xpos}, $dynents->{$_}->{ypos};
+        if($dynents->{$_}->{xpos} > 0 && $dynents->{$_}->{xpos} < $ents->{map}->{xbb} && $dynents->{$_}->{ypos} > 0 && $dynents->{$_}->{ypos} < $ents->{map}->{ybb}) {
+            renderdynent $ents->{$dynents->{$_}->{ent}}->{sprite}, $dynents->{$_}->{xpos}, $dynents->{$_}->{ypos};
+        } elsif ($dynents->{$_}->{deloffscreen}) {
+            delete $dynents->{$_};
+        }
     }keys%$dynents;
 }
 
@@ -79,6 +121,7 @@ sub handleinputs {
     ReadMode 'normal';
     $rstr=~/w/ && ($dynents->{ship}->{ypos}-=2);
     $rstr=~/s/ && ($dynents->{ship}->{ypos}+=2);
+    $rstr=~/\]/ && firelaser($tick);
     $rstr=~/\[/ && $dynents->{ship}->{xvel} < 10 && ($ship_lastaccel=$tick) && ($dynents->{ship}->{xvel}++);
     $rstr!~/\[/ && $tick - $ship_lastaccel > 5 && ($ship_lastaccel=$tick) && $dynents->{ship}->{xvel} > 0 && ($dynents->{ship}->{xvel}--);
 }
@@ -87,36 +130,38 @@ sub handleinputs {
 loadent("map");
 loadent("ship");
 loadent("laser");
-newdynent(ent=>"ship",
-    xpos=>$ents->{map}->{xbb}/2,
+loadent("lander");
+newdynent(id=>"ship",
+    ent=>"ship",
+    xpos=>$ents->{map}->{xbb}/3,
     ypos=>20,
     xvel=>0,
     yvel=>0,
     dir=>1
     );
-newdynent(ent=>"laser",
-    xpos=>int($dynents->{ship}->{xpos}+$ents->{ship}->{xbb}),
-    ypos=>int($dynents->{ship}->{ypos}+($ents->{ship}->{ybb}/2)),
-    xvel=>2,
-    yvel=>0,
-    dir=>1
-    );
 
+delete $dynents->{laser3};
+
+p"ents:";
+say Dumper $ents;
+p"dynents:";
 say Dumper $dynents;
 
-#p"list of dynents";
-#map{
-#    say;
-#}keys%$dynents;
+p"list of dynents:";
+map{
+    say;
+}keys%$dynents;
+
+p"----";
+p$ents->{$dynents->{ship}->{ent}}->{sprite};
+$x=<>;
 
 $ship_lastaccel=0;
 
 #main render loop
 
 $lbase=0;
-
-#exit 0;
-
+spawnwave;
 map{
     print`clear`;
     rendermap$lbase;
@@ -125,11 +170,13 @@ map{
     handleinputs$_;
     #render objects on top of map
     renderdynents;
+    updatedynents;
+    checkdynentcollision;
     print $t->Tgoto("cm",99999,99999); #move cursor away to hide input garbage
     usleep(60000);
     $lbase+=$dynents->{ship}->{xvel};
     $lbase > $ents->{map}->{xbb} && ($lbase=0); # once we reach the end of the map, wrap back to the start
-}0..1000;
+}0..2000;
 
 #TODO BUG
 # Some tearing happens when (it SEEMS) we reach the end one complete cycle of going over the map (i.e. when we reach $map_maxl
