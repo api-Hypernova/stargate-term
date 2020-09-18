@@ -16,11 +16,6 @@ sub loadent {
     $ents->{$name}->{sprite}="";
     $ents->{$name}->{xbb}=0;
     $ents->{$name}->{ybb}=0;
-    #$ents->{$name}->{xvel}=0; #REPLACE
-    #$ents->{$name}->{yvel}=0; #REPLACE
-    #$ents->{$name}->{xpos}=0; #REPLACE
-    #$ents->{$name}->{ypos}=0; #REPLACE
-    #$ents->{$name}->{dir}=0; #REPLACE
     map{
         $ents->{$name}->{sprite}.=$_;
         $ents->{$name}->{ybb}++;
@@ -42,7 +37,7 @@ sub renderdynent {
     $tex=@_[0];
     $x=@_[1];
     $y=@_[2];
-    p"ENT POS: $x,$y";
+   # p"ENT POS: $x,$y";
     $c=0;
     map{
         print $t->Tgoto("cm",$x,$y+$c);
@@ -72,9 +67,9 @@ sub newdynent {
 }
 
 sub renderdynents {
-    #map{
-      #  renderdynent $ents->{ship}->{sprite}, $dynents->{ship}->{xpos}, $dynents->{ship}->{ypos};
-    #};
+    map{
+        renderdynent $ents->{$_}->{sprite}, $dynents->{$_}->{xpos}, $dynents->{$_}->{ypos};
+    }keys%$dynents;
 }
 
 sub handleinputs {
@@ -100,7 +95,7 @@ newdynent(ent=>"ship",
     dir=>1
     );
 newdynent(ent=>"laser",
-    xpos=>int($dynents->{ship}->{xpos}+($ents->{ship}->{xbb}/2)),
+    xpos=>int($dynents->{ship}->{xpos}+$ents->{ship}->{xbb}),
     ypos=>int($dynents->{ship}->{ypos}+($ents->{ship}->{ybb}/2)),
     xvel=>2,
     yvel=>0,
@@ -109,10 +104,10 @@ newdynent(ent=>"laser",
 
 say Dumper $dynents;
 
-p"list of dynents";
-map{
-    say;
-}keys%{$dynents};
+#p"list of dynents";
+#map{
+#    say;
+#}keys%$dynents;
 
 $ship_lastaccel=0;
 
@@ -120,7 +115,7 @@ $ship_lastaccel=0;
 
 $lbase=0;
 
-exit 0;
+#exit 0;
 
 map{
     print`clear`;
@@ -129,10 +124,12 @@ map{
     #handle user inputs
     handleinputs$_;
     #render objects on top of map
+    renderdynents;
+    print $t->Tgoto("cm",99999,99999); #move cursor away to hide input garbage
     usleep(60000);
     $lbase+=$dynents->{ship}->{xvel};
     $lbase > $ents->{map}->{xbb} && ($lbase=0); # once we reach the end of the map, wrap back to the start
-}0..5000;
+}0..1000;
 
 #TODO BUG
 # Some tearing happens when (it SEEMS) we reach the end one complete cycle of going over the map (i.e. when we reach $map_maxl
