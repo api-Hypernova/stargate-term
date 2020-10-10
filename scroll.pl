@@ -64,13 +64,19 @@ sub checkdynentcollision {
             $dynents->{$e}->{ent} eq "lander"  && p "LANDER" && goto e;
             map{
                     $dynents->{$e}->{ent} eq "laser" && $dynents->{$_}->{ent} eq "laser" && goto e; #lasers don't collide with each other
-                    $dynents->{$e}->{xpos} + $ents->{$dynents->{$e}}->{xbb} >= $dynents->{$_}->{xpos} &&
-                    #$dynents->{$e}->{xpos} <= $dynents->{$e}->{xpos} + $ents->{$dynents->{$e}}->{xbb} &&
-                    #$dynents->{$e}->{ypos} + $ents->{$dynents->{$e}}->{ybb} >= $dynents->{$_}->{ypos} &&
-                    #$dynents->{$e}->{ypos} <= $dynents->{$e}->{ypos} + $ents->{$dynents->{$e}}->{ybb} &&
-                    #p "COLLISION";
-                    delete $dynents->{$e} &&
-                    delete $dynents->{$_};
+                    #($dynents->{$e}->{ent} eq "ship" || $dynents->{$e}->{ent} eq "laser") && ($dynents->{$_}->{ent} eq "laser" || $dynents->{$_}->{ent} eq "ship") && goto e; #don't allow ship to collide with laser
+                    $dynents->{$e}->{id} eq $dynents->{$_}->{id} && goto e;  #don't allow any ent to collide with itself!
+
+                    if(($dynents->{$e}->{xpos} + $ents->{$dynents->{$e}}->{xbb}) >= $dynents->{$_}->{xpos} &&
+                        $dynents->{$e}->{xpos} <= ($dynents->{$e}->{xpos} + $ents->{$dynents->{$e}}->{xbb}) &&
+                        ($dynents->{$e}->{ypos} + $ents->{$dynents->{$e}}->{ybb}) >= $dynents->{$_}->{ypos} &&
+                        $dynents->{$e}->{ypos} <= ($dynents->{$e}->{ypos} + $ents->{$dynents->{$e}}->{ybb}))
+                    {
+                        p "COLLISION: $dynents->{$e}->{id}, $dynents->{$_}->{id}";
+                        $dynents->{$e}->{ent} ne"ship" && delete $dynents->{$e};
+                        $dynents->{$_}->{ent} ne"ship" &&  delete $dynents->{$_};
+                    }
+
             }keys%$dynents;
             e:
     }keys%$dynents;
@@ -89,7 +95,7 @@ sub firelaser {
     $tick=@_[0];
     newdynent(id=>"laser$tick",
         ent=>"laser",
-        xpos=>int($dynents->{ship}->{xpos}+$ents->{ship}->{xbb}),
+        xpos=>int($dynents->{ship}->{xpos}+$ents->{ship}->{xbb}+2),
         ypos=>int($dynents->{ship}->{ypos}+($ents->{ship}->{ybb}/2)),
         xvel=>10,
         yvel=>0,
@@ -176,6 +182,7 @@ map{
     usleep(60000);
     $lbase+=$dynents->{ship}->{xvel};
     $lbase > $ents->{map}->{xbb} && ($lbase=0); # once we reach the end of the map, wrap back to the start
+    $x=<>;
 }0..2000;
 
 #TODO BUG
