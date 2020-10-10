@@ -182,7 +182,7 @@ map{
     usleep(60000);
     $lbase+=$dynents->{ship}->{xvel};
     $lbase > $ents->{map}->{xbb} && ($lbase=0); # once we reach the end of the map, wrap back to the start
-    $x=<>;
+    #$x=<>;
 }0..2000;
 
 #TODO BUG
